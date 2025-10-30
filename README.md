@@ -1,7 +1,6 @@
 TweetHub is a Twitter-like social media platform built entirely in Python (Object-Oriented Programming) — no frameworks, no database (yet)!
 It simulates all real Twitter features like tweets, likes, follows, groups, hashtags, mentions, comments, retweets, and more — fully in the console.
 
-
 ---
 
 🌟 Features
