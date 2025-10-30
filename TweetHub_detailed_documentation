@@ -1,0 +1,293 @@
+*# TweetHub: A Python Social Platform*
+
+## Overview
+
+*TweetHub* is a fully functional command-line social media simulator built in pure Python, inspired by Twitter (now X). Developed as a personal project by a 1st-year MTech Integrated (IT) student at DAVV Indore, it demonstrates object-oriented programming (OOP), data structures (dictionaries, sets, lists), regex for parsing, and basic algorithms (e.g., heapq for ranking). 
+
+The app supports *25+ features*, including tweeting with mentions/hashtags, group chats with admin controls, personalized feeds, notifications, and more. All data is stored in memory using class-level variables for global state management. No external databases or frameworks are used — just standard Python libraries (random, re, heapq).
+
+This CLI app simulates real-world social interactions for multiple users, making it ideal for learning system design and scalable coding.
+
+*Tech Stack:*
+- Python 3.x
+- OOP with a single TweetHub class
+- Data Structures: Dictionaries (for tweets/profiles), Sets (for likes/followers), Lists (for comments/notifications)
+- Algorithms: Regex for @mentions/#hashtags, Heapq for interest ranking, Sorting for trends
+
+*Current Version:* v1.0 (In-Memory Storage)  
+*Upcoming:* v2.0 (SQL Database for Persistence)
+
+## Features
+
+Below is a *detailed list of every feature*, grouped by category. Each includes:
+- *Description*: What it does.
+- *How it Works*: Technical details from the code.
+- *Usage Example*: From the demo script.
+
+### 1. User Management & Profiles
+- **User Creation (__init__)**  
+  *Description*: Creates a new user with a unique username, initializing profile and interaction data. Prevents duplicates with UsernameError.  
+  *How it Works*: Adds username to all_users set; sets up empty profile dict (all_profiles), sets (all_followers, all_following), lists (all_notifications, all_mentions), and counters (all_followers_no, etc.).  
+  *Usage Example*: amit = TweetHub("amit") — Creates user "amit" with empty bio/age/location.
+
+- **View Profile (view_profile)**  
+  *Description*: Displays a user's profile details, follower/following counts, tweet count, and mutual followers (if viewing another's profile).  
+  *How it Works*: Prints all_profiles[username]; calculates mutuals by intersecting all_following[self.username] and all_followers[username].  
+  *Usage Example*: amit.view_profile("amit") — Shows: Username: amit, Followers: 8, Following: 12, Tweets: 6, Mutual: 2.
+
+- **Change Bio (change_bio)**  
+  *Description*: Updates the user's bio in their profile.  
+  *How it Works*: Directly assigns to all_profiles[self.username]["bio"].  
+  *Usage Example*: amit.change_bio("the creator of this application..") — Bio updated successfully.
+
+- **Change Age (change_age)**  
+  *Description*: Updates the user's age (must be an integer).  
+  *How it Works*: Validates type(newage) == int before assigning to all_profiles[self.username]["age"].  
+  *Usage Example*: amit.change_age(17) — Age changed successfully.
+
+- **Change Location (change_location)**  
+  *Description*: Updates the user's location (must contain only alphabetic characters).  
+  *How it Works*: Validates newlocation.isalpha() before assigning to all_profiles[self.username]["location"].  
+  *Usage Example*: amit.change_location("INDIA") — Location changed successfully.
+
+- **Search Users (search_users)**  
+  *Description*: Searches for users by keyword in username or bio.  
+  *How it Works*: Iterates over all_profiles; checks keyword.lower() in username/bio; prints matches.  
+  *Usage Example*: naitik.search_users("creator") — Finds users like "amit" with matching bio.
+
+### 2. Tweeting & Content Creation
+- **Tweet (tweet)**  
+  *Description*: Posts a new tweet, auto-increments post number, tracks hashtags/mentions, and triggers notifications.  
+  *How it Works*: Stores in self.id, all_tweet, all_likes (empty set), all_comments (empty list); uses re.findall for @mentions (adds to all_mentions/all_notifications) and #hashtags (stores in all_tweet_hashtags/all_hashtags["tweet"]); increments all_tweets_no.  
+  *Usage Example*: amit.tweet("welcome to my app,did you like it?") — Post #1 created; notifies mentioned users.
+
+- **Delete Tweet (delete_tweet)**  
+  *Description*: Removes a specific tweet by post number, cleaning up likes, comments, hashtags.  
+  *How it Works*: Pops from self.id, all_tweet, all_likes, all_comments; removes from all_hashtags["tweet"]; decrements all_tweets_no. (Note: Minor bug in code — uses self.post_no instead of number for hashtag pop.)  
+  *Usage Example*: naman.delete_tweet(1) — Tweet 1 removed if exists.
+
+- **View All Tweets (view_all_tweets)**  
+  *Description*: Displays all tweets from a specific user.  
+  *How it Works*: Accesses all_objects[username].id dict and prints it.  
+  *Usage Example*: ayushi.view_all_tweets("amit") — Shows amit's tweet dict.
+
+- **View Tweet (view_tweet)**  
+  *Description*: Views a specific tweet with likes/comments count, lists likes/comments, and updates user interests from hashtags.  
+  *How it Works*: Prints tweet text, counts from all_likes/all_comments; calls view_likes/view_comments; increments all_user_interests for hashtags.  
+  *Usage Example*: ashi.view_tweet("amit",1) — Shows tweet text, 3 likes, 5 comments, likes list, comments list.
+
+- **Retweet (retweet)**  
+  *Description*: Retweets another user's tweet as a new post with "RT @user: [text]", copies hashtags, notifies original poster.  
+  *How it Works*: Creates new post in self.id/all_tweet with formatted text; copies all_tweet_hashtags; adds to all_comments (empty), all_likes (empty); increments all_tweets_no; appends to all_notifications.  
+  *Usage Example*: naitik.retweet("amit",6) — Creates RT post, notifies amit.
+
+- **Share (share)**  
+  *Description*: Shares a tweet via direct message to another user, updates sharer's interests from hashtags.  
+  *How it Works*: Calls message with tweet text; increments all_user_interests for hashtags.  
+  *Usage Example*: ashi.share("ayushi","amit",1) — Sends amit's tweet #1 to ayushi via DM.
+
+- **Random Tweets (random_tweets)**  
+  *Description*: Displays a limited number of random tweets (avoids duplicates).  
+  *How it Works*: Uses random.choice on all_tweet.items() in a loop with seen set to track uniqueness; stops if limit reached or no more tweets.  
+  *Usage Example*: user.random_tweets(5) — Prints 5 unique random tweets.
+
+### 3. Interactions (Likes, Comments, Mentions)
+- **Like (like)**  
+  *Description*: Likes a tweet, tracks user's liked tweets, notifies owner, updates interests from hashtags.  
+  *How it Works*: Adds to all_likes[(username,post_no)] set and all_user_liked_tweets[self.username]; appends to all_notifications; increments all_user_interests for hashtags.  
+  *Usage Example*: ashi.like("amit",1) — Amit notified: "ashi liked your tweet 1".
+
+- **Unlike (unlike)**  
+  *Description*: Removes like from a tweet, updates liked tweets list, decrements interests (by 2 for balance).  
+  *How it Works*: Removes from all_likes and all_user_liked_tweets; decrements all_user_interests for hashtags (if exists).  
+  *Usage Example*: jeevan.unlike("amit",2) — Like removed.
+
+- **View Likes (view_likes)**  
+  *Description*: Lists users who liked a specific tweet.  
+  *How it Works*: Prints all_likes[(username,post_no)] set.  
+  *Usage Example*: Called in view_tweet; shows likers like {'ashi', 'lakshya'}.
+
+- **Comment (comment)**  
+  *Description*: Adds a comment to a tweet, notifies owner, handles mentions/hashtags in comment, updates interests.  
+  *How it Works*: Appends (self.username, commentt) to all_comments[(username,post_no)]; notifies owner; uses re.findall for @mentions (adds to all_mentions/all_notifications) and #hashtags (stores in all_hashtags["comment"]); increments all_user_interests from tweet hashtags.  
+  *Usage Example*: ashi.comment("amit",1,"yeah! no issue good app!") — Amit notified; interests updated.
+
+- **View Comments (view_comments)**  
+  *Description*: Lists all comments on a specific tweet.  
+  *How it Works*: Prints all_comments[(username,post_no)] list.  
+  *Usage Example*: Called in view_tweet; shows [('ashi', 'yeah! ...')].
+
+- **View All Mentions (view_all_mentions)**  
+  *Description*: Shows all mentions of the user across tweets, comments, groups.  
+  *How it Works*: Prints all_mentions[self.username] list.  
+  *Usage Example*: ashi.view_all_mentions() — Lists "mentioned by amit in tweet...".
+
+### 4. Social Connections (Follows)
+- **Follow (follow)**  
+  *Description*: Follows another user (can't follow self; skips if already following), increments counters, notifies followed user.  
+  *How it Works*: Adds to all_followers[username] and all_following[self.username] sets; increments all_followers_no/all_following_no; appends to all_notifications.  
+  *Usage Example*: amit.follow("ashi") — As hi notified: "amit started following you!".
+
+- **Unfollow (unfollow)**  
+  *Description*: Unfollows a user, decrements counters.  
+  *How it Works*: Removes from all_followers[username] and all_following[self.username]; decrements counters.  
+  *Usage Example*: lakshya.unfollow("ashi") — Follow removed.
+
+- **View Followers (view_followers)**  
+  *Description*: Shows total followers and list for a user.  
+  *How it Works*: Prints count from all_followers_no and set from all_followers.  
+  *Usage Example*: amit.view_followers("amit") — Total followers: 8 {ashi, ayushi, ...}.
+
+- **View Following (view_following)**  
+  *Description*: Shows total following and list for a user.  
+  *How it Works*: Prints count from all_following_no and set from all_following.  
+  *Usage Example*: ayushi.view_following("amit") — Total following: 12 {ashi, naman, ...}.
+
+- **View Mutual Followers (view_mutual_followers)**  
+  *Description*: Shows mutual followers between current user and target.  
+  *How it Works*: Intersects all_following[self.username] and all_followers[username]; prints count and set.  
+  *Usage Example*: ayushi.view_mutual_followers("amit") — 2 mutual: {naman, ashi}.
+
+### 5. Messaging & Groups
+- **Message (message)**  
+  *Description*: Sends a direct message to another user, notifies recipient.  
+  *How it Works*: Appends to all_messages[username].setdefault(self.username, []); appends to all_notifications.  
+  *Usage Example*: amit.message("ashi","hey pagal") — As hi notified.
+
+- **View Messages (view_messages)**  
+  *Description*: Displays all DMs received by the user.  
+  *How it Works*: Prints all_messages[self.username] dict.  
+  *Usage Example*: ashi.view_messages() — Shows messages from amit: ['hey pagal'].
+
+- **Create Group (create_group)**  
+  *Description*: Creates a new group with creator as admin; adds followers-only members, notifies them.  
+  *How it Works*: Initializes all_groups[groupname] dict with creator/members/admins/messages; adds to all_user_groups; checks followers before adding.  
+  *Usage Example*: amit.create_group("friends",["jeevan","priyansh"]) — Group created, members added if following.
+
+- **View Group (view_group)**  
+  *Description*: Displays group details (creator, members, admins, messages).  
+  *How it Works*: Prints all_groups[groupname] if user is member.  
+  *Usage Example*: abhishek.view_group("friends") — Shows members: {amit, lakshya}, admins: {amit}.
+
+- **Leave Group (leave_group)**  
+  *Description*: User leaves a group.  
+  *How it Works*: Removes from all_groups[groupname]["members"] and all_user_groups[self.username].  
+  *Usage Example*: user.leave_group("friends") — Leaved successfully.
+
+- **Remove Group Member (remove_group_member)**  
+  *Description*: Admin removes a non-creator member from group, notifies them.  
+  *How it Works*: Checks admin status; removes from all_groups["members"] and all_user_groups; notifies.  
+  *Usage Example*: amit.remove_group_member("friends","naman") — Naman removed.
+
+- **Add Group Member (add_group_member)**  
+  *Description*: Admin adds a follower as member, notifies them.  
+  *How it Works*: Checks admin/follow status; adds to all_groups["members"] and all_user_groups; notifies.  
+  *Usage Example*: lakshya.add_group_member("friends","naman") — Naman added.
+
+- **Add Group Admin (add_group_admin)**  
+  *Description*: Admin promotes a member to admin or adds/promotes a follower.  
+  *How it Works*: Checks admin status; adds to all_groups["admins"] (and members if needed); notifies.  
+  *Usage Example*: amit.add_group_admin("friends","lakshya") — Lakshya made admin.
+
+- **Remove Group Admin (remove_group_admin)**  
+  *Description*: Admin demotes another non-creator admin.  
+  *How it Works*: Checks admin status; removes from all_groups["admins"]; notifies.  
+  *Usage Example*: amit.remove_group_admin("friends","abhishek") — Abhishek demoted.
+
+- **Group Message (group_message)**  
+  *Description*: Sends message in group, handles mentions, notifies all members.  
+  *How it Works*: Stores in all_groups[groupname]["messages"][self.username]; uses re.findall for @mentions (adds to all_mentions/all_notifications); notifies all members.  
+  *Usage Example*: amit.group_message("friends","hii everyone @lakshya") — Lakshya and others notified.
+
+- **View Group Messages (view_group_messages)**  
+  *Description*: Displays all messages in a group.  
+  *How it Works*: Prints all_groups[groupname]["messages"] dict if member.  
+  *Usage Example*: amit.view_group_messages("friends") — Shows messages from amit/lakshya.
+
+- **View My Groups (view_my_groups)**  
+  *Description*: Lists all groups the user is in.  
+  *How it Works*: Prints all_user_groups[self.username] set.  
+  *Usage Example*: amit.view_my_groups() — Shows {'friends'}.
+
+### 6. Discovery & Trends
+- **Trending Tweets (trending_tweets)**  
+  *Description*: Shows tweets with likes >= 20% of total users, with comments/likes.  
+  *How it Works*: Iterates all_likes; filters by len(all_likes[x]) >= len(all_users)//5; prints tweet, calls view_comments/view_likes.  
+  *Usage Example*: priyansh.trending_tweets() — Prints popular tweets.
+
+- **Search Hashtags (search_hashtags)**  
+  *Description*: Searches and lists tweets/comments containing a hashtag.  
+  *How it Works*: Prints all_hashtags["tweet"/"comment"][hashtag] lists if exists.  
+  *Usage Example*: amit.search_hashtags("love") — Shows all #love tweets/comments.
+
+- **Trending Hashtags (trending_hashtags)**  
+  *Description*: Top N hashtags in tweets/comments by usage count.  
+  *How it Works*: Sorts all_hashtags["tweet"/"comment"].items() by len(value) descending; prints top N.  
+  *Usage Example*: amit.trending_hashtags(3) — Top 3: [('love', 5), ('cricket', 3)].
+
+### 7. Feed & Interests
+- **My Feed (myfeed)**  
+  *Description*: Generates personalized tweet suggestions from interests, follows, and random; combines and prints.  
+  *How it Works*: Three sub-functions: interests_based_suggestions (heapq top interests, weighted random from hashtags); following_based_suggestions (random from followed users); new_suggestions (random global); unions sets and prints. Updates all_user_interests from interactions.  
+  *Usage Example*: amit.myfeed() — Prints suggested tweets like ('ashi',1,'hiii everyone!').
+
+- **View My Liked Tweets (view_my_liked_tweets)**  
+  *Description*: Lists all tweets liked by the user.  
+  *How it Works*: Prints all_user_liked_tweets[self.username] set.  
+  *Usage Example*: user.view_my_liked_tweets() — Shows liked tuples.
+
+### 8. Notifications & Misc
+- **View Notifications (view_notifications)**  
+  *Description*: Shows and clears all notifications for the user.  
+  *How it Works*: Prints all_notifications[self.username] list; clears it.  
+  *Usage Example*: amit.view_notifications() — Lists all alerts, then clears.
+
+### Global/Class-Level Features
+The app uses class-level variables for shared data:
+- all_tweet: Dict of all tweets by (username, post_no).
+- all_users: Set of all usernames.
+- all_comments: Dict of comments by (username, post_no).
+- all_likes: Dict of likers sets by (username, post_no).
+- all_followers/all_following: Sets of relationships.
+- all_messages: Nested dict of DMs.
+- all_notifications: List per user.
+- all_objects: User instances.
+- all_groups: Dict of group details.
+- all_profiles: User profiles.
+- all_user_groups: Groups per user.
+- all_followers_no/all_following_no/all_tweets_no: Counters.
+- all_mentions: Mentions list per user.
+- all_user_interests: Interests dict per user (hashtag counts).
+- all_tweet_hashtags: Hashtags per tweet.
+- all_hashtags: Nested dict for tweet/comment hashtags.
+- all_user_liked_tweets: Liked tweets per user.
+
+These enable cross-user interactions without a database.
+
+## Installation & Setup
+
+1. Clone the repo: git clone https://github.com/yourusername/tweethub.git
+2. Navigate: cd tweethub
+3. Run: python tweethub.py (includes demo script with users like amit, ashi).
+
+No dependencies — runs on Python 3.6+.
+
+## Usage
+
+See the demo script at the end of tweethub.py for examples (creates users, tweets, follows, etc.). Instantiate: user = TweetHub("username"), then call methods like user.tweet("Hello!").
+
+## Contributing
+
+Suggestions welcome! Issues/PRs for bugs (e.g., delete_tweet hashtag pop fix) or features (timestamps, SQL).
+
+## Future Enhancements
+
+- Timestamps for tweets/messages (with simulated time for testing).
+- SQL integration (SQLite for persistence).
+- Web UI (Flask/Streamlit).
+
+*Built with Love by [Amit Dubey], 1st-Year MTech Integrated @ DAVV Indore*  
+**Connect: 
+[LinkedIn]** https://www.linkedin.com/in/amit-dubey-613355371
+
+[GitHub]** https://github.com/Amit-dubey-007/TweetHub
